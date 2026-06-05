@@ -1,0 +1,18 @@
+# 1. 자바 21과 호환되는 최신 Gradle 이미지 사용
+FROM gradle:9.5.1-jdk21 AS builder
+
+# 2. 컨테이너 내부 작업 디렉토리 설정
+WORKDIR /backend
+
+# 3. 빌드 종속성 파일만 먼저 복사 (캐싱 효율화)
+COPY build.gradle.kts settings.gradle.kts ./
+
+# 4. 의존성 미리 다운로드 (소스 코드 변경 시 매번 다운로드하지 않도록)
+RUN gradle build -x test -x bootJar -x jar --no-daemon || true
+
+# 5. 소스 코드 복사 (컴포즈 볼륨이 덮어쓰겠지만 빌드용으로 포함)
+COPY . .
+
+# 6. 개발 모드로 Spring Boot 실행 (BootRun 사용)
+# --no-daemon 옵션은 도커 컨테이너 내부 메모리 낭비를 방지합니다.
+CMD ["gradle", "bootRun", "--no-daemon"]
