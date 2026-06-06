@@ -1,0 +1,187 @@
+package com.example.jbbackend.domain.board.service;
+
+import com.example.jbbackend.domain.board.dto.ReviewBoardCreateRequest;
+import com.example.jbbackend.domain.board.dto.ReviewBoardResponse;
+import com.example.jbbackend.domain.board.dto.ReviewStartResponse;
+import com.example.jbbackend.domain.board.entity.ReviewBoard;
+import com.example.jbbackend.domain.board.repository.ReviewBoardRepository;
+import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
+import com.example.jbbackend.domain.review.entity.BusinessSector;
+import com.example.jbbackend.domain.review.entity.ChannelType;
+import com.example.jbbackend.domain.review.entity.ContentCategory;
+import com.example.jbbackend.domain.review.entity.ContentType;
+import com.example.jbbackend.domain.review.entity.LanguageCode;
+import com.example.jbbackend.domain.review.entity.ProductCategory;
+import com.example.jbbackend.domain.review.entity.ReviewContentVersion;
+import com.example.jbbackend.domain.review.entity.ReviewStatus;
+import com.example.jbbackend.domain.review.repository.ReviewContentVersionRepository;
+import com.example.jbbackend.global.Exception.BusinessException;
+import com.example.jbbackend.global.Exception.ErrorCode;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ReviewBoardService {
+
+    private final ReviewBoardRepository reviewBoardRepository;
+    private final ReviewContentVersionRepository reviewContentVersionRepository;
+
+    @Transactional
+    public ReviewStartResponse createReviewBoard(ReviewBoardCreateRequest request, MultipartFile contentFile) {
+        if (reviewBoardRepository.existsByManagementNumberAndDeletedAtIsNull(request.managementNumber())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 사용 중인 관리번호입니다.");
+        }
+
+        String storedFilePath = saveContentFile(contentFile).orElse(request.contentFilePath());
+        ContentType contentType = parseContentType(request.contentType());
+        validateContent(contentType, request.contentText(), storedFilePath);
+
+        ReviewBoard board = ReviewBoard.create(
+            request.contentCreatorId(),
+            request.complianceAdvisorId(),
+            request.managementNumber(),
+            request.reviewApprovalNumber(),
+            request.title()
+        );
+        ReviewBoard savedBoard = reviewBoardRepository.save(board);
+
+        ReviewContentVersion initialVersion = ReviewContentVersion.create(
+            savedBoard.getId(),
+            1,
+            parseBusinessSector(request.businessSector()),
+            parseChannelType(request.channelType()),
+            contentType,
+            parseContentCategory(request.contentCategory()),
+            parseNullableProductCategory(request.productCategory()),
+            parseLanguageCode(request.languageCode()),
+            storedFilePath,
+            request.contentText(),
+            request.contentDescription(),
+            ReviewStatus.pending,
+            null,
+            null
+        );
+        ReviewContentVersion savedVersion = reviewContentVersionRepository.save(initialVersion);
+
+        return new ReviewStartResponse(
+            ReviewBoardResponse.from(savedBoard),
+            ReviewContentVersionResponse.from(savedVersion)
+        );
+    }
+
+    public List<ReviewBoardResponse> getReviewBoards() {
+        return reviewBoardRepository.findAllByDeletedAtIsNullOrderByIdAsc()
+            .stream()
+            .map(ReviewBoardResponse::from)
+            .toList();
+    }
+
+    public Optional<ReviewStartResponse> startReview(Long reviewId) {
+        return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
+            .map(board -> {
+                ReviewContentVersionResponse latestVersion = reviewContentVersionRepository
+                    .findFirstByBoardIdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
+                    .map(ReviewContentVersionResponse::from)
+                    .orElse(null);
+                return new ReviewStartResponse(ReviewBoardResponse.from(board), latestVersion);
+            });
+    }
+
+    private void validateContent(ContentType contentType, String contentText, String contentFilePath) {
+        boolean hasText = contentText != null && !contentText.isBlank();
+        boolean hasFile = contentFilePath != null && !contentFilePath.isBlank();
+
+        if (contentType == ContentType.text && !hasText) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "텍스트 심의는 contentText가 필요합니다.");
+        }
+        if (contentType == ContentType.file && !hasFile) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미지 심의는 contentFile 또는 contentFilePath가 필요합니다.");
+        }
+        if (contentType == ContentType.file_with_text && (!hasText || !hasFile)) {
+            throw new BusinessException(
+                ErrorCode.INVALID_INPUT_VALUE,
+                "텍스트+이미지 심의는 contentText와 contentFile 또는 contentFilePath가 모두 필요합니다."
+            );
+        }
+    }
+
+    private Optional<String> saveContentFile(MultipartFile contentFile) {
+        if (contentFile == null || contentFile.isEmpty()) {
+            return Optional.empty();
+        }
+
+        try {
+            Path uploadDirectory = Path.of("uploads", "reviews");
+            Files.createDirectories(uploadDirectory);
+
+            String storedFilename = UUID.randomUUID() + getExtension(contentFile.getOriginalFilename());
+            Path targetPath = uploadDirectory.resolve(storedFilename);
+            Files.copy(contentFile.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return Optional.of(targetPath.toString().replace("\\", "/"));
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다.");
+        }
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "";
+        }
+
+        int dotIndex = filename.lastIndexOf('.');
+        if (dotIndex < 0) {
+            return "";
+        }
+        return filename.substring(dotIndex);
+    }
+
+    private BusinessSector parseBusinessSector(String value) {
+        return parseEnum(BusinessSector.class, value);
+    }
+
+    private ChannelType parseChannelType(String value) {
+        return parseEnum(ChannelType.class, value);
+    }
+
+    private ContentType parseContentType(String value) {
+        if ("image".equals(value)) {
+            return ContentType.file;
+        }
+        if ("text_image".equals(value) || "text+image".equals(value)) {
+            return ContentType.file_with_text;
+        }
+        return parseEnum(ContentType.class, value);
+    }
+
+    private ContentCategory parseContentCategory(String value) {
+        return parseEnum(ContentCategory.class, value);
+    }
+
+    private ProductCategory parseNullableProductCategory(String value) {
+        return value == null ? null : parseEnum(ProductCategory.class, value);
+    }
+
+    private LanguageCode parseLanguageCode(String value) {
+        return parseEnum(LanguageCode.class, value);
+    }
+
+    private <T extends Enum<T>> T parseEnum(Class<T> enumType, String value) {
+        try {
+            return Enum.valueOf(enumType, value);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+}
