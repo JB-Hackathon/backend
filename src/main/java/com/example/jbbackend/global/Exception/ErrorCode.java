@@ -31,6 +31,9 @@ public enum ErrorCode {
 
     // Team
     TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "TEA001", "팀을 찾을 수 없습니다."),
+    
+    // Review
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REV001", "심의를 찾을 수 없습니다."),
 
     // JWT
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "JWT001", "유효하지 않은 리프레시 토큰입니다"),
