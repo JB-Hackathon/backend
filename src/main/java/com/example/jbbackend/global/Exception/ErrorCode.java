@@ -25,6 +25,12 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "AUT001", "인증에 실패하였습니다."),
     AUTHORIZATION_FAILED(HttpStatus.FORBIDDEN, "AUT002", "접근 권한이 없습니다."),
 
+    // Team
+    TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "TEA001", "팀을 찾을 수 없습니다."),
+    
+    // Review
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REV001", "심의를 찾을 수 없습니다."),
+
     // JWT
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "JWT001", "유효하지 않은 리프레시 토큰입니다"),
     REFRESH_TOKEN_REVOKED(HttpStatus.UNAUTHORIZED, "JWT002", "리프레시 토큰이 만료되었습니다"),
