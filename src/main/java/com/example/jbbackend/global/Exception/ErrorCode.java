@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Common
-    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COM001", "잘못된 입력 값입니다."),
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COM001", "잘못된 입력값입니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "COM002", "허용되지 않은 요청입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COM003", "서버 내부 오류입니다."),
     INVALID_INPUT_FORMAT(HttpStatus.BAD_REQUEST, "COM004", "잘못된 입력 형식입니다."),
@@ -20,6 +20,10 @@ public enum ErrorCode {
     EMAIL_DUPLICATION(HttpStatus.CONFLICT, "MEM002", "이미 사용중인 이메일입니다."),
     INVALID_MEMBER_ROLE(HttpStatus.BAD_REQUEST, "MEM003", "잘못된 회원 역할입니다."),
     NICKNAME_DUPLICATION(HttpStatus.CONFLICT, "MEM004", "이미 사용중인 닉네임입니다."),
+
+    // User
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USR001", "회원을 찾을 수 없습니다."),
+    USER_ALREADY_WITHDRAWN(HttpStatus.BAD_REQUEST, "USR002", "이미 탈퇴한 회원입니다."),
 
     // Auth
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "AUT001", "인증에 실패하였습니다."),
@@ -38,12 +42,12 @@ public enum ErrorCode {
     ILLEGAL_ARGUMENT_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "JWT007", "유효하지 않은 액세스 토큰입니다."),
 
     // OAuth
-    INVALID_OAUTH_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "OAU001", "유효하지 않은 OAuth 액세스 토큰입니다"),
-    VERIFY_FAILED_OAUTH_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "OAU002", "OAuth 액세스 토큰 인증을 실패하였습니다"),
+    INVALID_OAUTH_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "OAU001", "유효하지 않은 OAuth 액세스 토큰입니다."),
+    VERIFY_FAILED_OAUTH_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "OAU002", "OAuth 액세스 토큰 인증을 실패하였습니다."),
     UNSUPPORTED_OAUTH_PROVIDER(HttpStatus.UNAUTHORIZED, "OAU003", "지원되지 않는 OAuth 제공자입니다."),
 
     // Login
-    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "LOG001", "로그인에 실패하였습니다"),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "LOG001", "로그인에 실패하였습니다."),
     LOGOUT_FAILED(HttpStatus.BAD_REQUEST, "LOG002", "로그아웃에 실패하였습니다."),
 
     // Mentor
@@ -60,7 +64,7 @@ public enum ErrorCode {
 
     // Message
     MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "MES001", "해당 메시지를 찾을 수 없습니다."),
-    NOT_ENOUGH_QUESTION_TICKET(HttpStatus.BAD_REQUEST, "MES002", "티켓이 부족합니다."),
+    NOT_ENOUGH_QUESTION_TICKET(HttpStatus.BAD_REQUEST, "MES002", "질문권이 부족합니다."),
 
     // Merchandise
     MERCHANDISE_NOT_FOUND(HttpStatus.NOT_FOUND, "MER001", "해당 상품을 찾을 수 없습니다."),
