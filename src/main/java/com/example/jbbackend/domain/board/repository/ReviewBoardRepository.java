@@ -12,4 +12,10 @@ public interface ReviewBoardRepository extends JpaRepository<ReviewBoard, Long> 
     Optional<ReviewBoard> findByIdAndDeletedAtIsNull(Long id);
 
     List<ReviewBoard> findAllByDeletedAtIsNullOrderByIdAsc();
+
+    List<ReviewBoard> findAllByTitleContainingIgnoreCaseAndDeletedAtIsNullOrderByIdAsc(String title);
+
+    List<ReviewBoard> findAllByManagementNumberContainingIgnoreCaseAndDeletedAtIsNullOrderByIdAsc(
+        String managementNumber
+    );
 }
