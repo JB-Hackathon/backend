@@ -4,6 +4,8 @@ import com.example.jbbackend.domain.review.entity.ReviewContentVersion;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ReviewContentVersionRepository extends JpaRepository<ReviewContentVersion, Long> {
 
@@ -11,9 +13,16 @@ public interface ReviewContentVersionRepository extends JpaRepository<ReviewCont
 
     List<ReviewContentVersion> findAllByDeletedAtIsNullOrderByIdAsc();
 
-    List<ReviewContentVersion> findAllByBoardIdAndDeletedAtIsNullOrderByVersionNoAsc(Long boardId);
+    List<ReviewContentVersion> findAllByBoard_IdAndDeletedAtIsNullOrderByVersionNoAsc(Long boardId);
 
-    List<ReviewContentVersion> findAllByBoardIdInAndDeletedAtIsNullOrderByBoardIdAscVersionNoDesc(List<Long> boardIds);
+    @Query("""
+        select review
+        from ReviewContentVersion review
+        where review.board.id in :boardIds
+          and review.deletedAt is null
+        order by review.board.id asc, review.versionNo desc
+        """)
+    List<ReviewContentVersion> findLatestCandidatesByBoardIds(@Param("boardIds") List<Long> boardIds);
 
-    Optional<ReviewContentVersion> findFirstByBoardIdAndDeletedAtIsNullOrderByVersionNoDesc(Long boardId);
+    Optional<ReviewContentVersion> findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(Long boardId);
 }

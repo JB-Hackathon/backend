@@ -1,5 +1,7 @@
 package com.example.jbbackend.domain.user.service;
 
+import com.example.jbbackend.domain.team.entity.Team;
+import com.example.jbbackend.domain.team.repository.TeamRepository;
 import com.example.jbbackend.domain.user.dto.UserCreateRequest;
 import com.example.jbbackend.domain.user.dto.UserResponse;
 import com.example.jbbackend.domain.user.dto.UserUpdateRequest;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public UserResponse createUser(UserCreateRequest request) {
@@ -29,7 +32,7 @@ public class UserService {
             request.password(),
             request.name(),
             parseRole(request.role()),
-            request.teamId()
+            findTeam(request.teamId())
         );
         return UserResponse.from(userRepository.save(user));
     }
@@ -46,7 +49,7 @@ public class UserService {
                     request.password(),
                     request.name(),
                     parseNullableRole(request.role()),
-                    request.teamId()
+                    request.teamId() == null ? null : findTeam(request.teamId())
                 );
                 return UserResponse.from(user);
             });
@@ -78,6 +81,11 @@ public class UserService {
         if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
             throw new BusinessException(ErrorCode.EMAIL_DUPLICATION);
         }
+    }
+
+    private Team findTeam(Long teamId) {
+        return teamRepository.findByIdAndDeletedAtIsNull(teamId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
     }
 
     private UserRole parseRole(String role) {

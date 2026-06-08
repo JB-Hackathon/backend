@@ -17,8 +17,8 @@ public record ReviewBoardResponse(
     public static ReviewBoardResponse from(ReviewBoard board) {
         return new ReviewBoardResponse(
             board.getId(),
-            board.getContentCreatorId(),
-            board.getComplianceAdvisorId(),
+            board.getContentCreator().getId(),
+            board.getComplianceAdvisor().getId(),
             board.getManagementNumber(),
             board.getReviewApprovalNumber(),
             board.getTitle(),

@@ -1,13 +1,17 @@
 package com.example.jbbackend.domain.review.entity;
 
+import com.example.jbbackend.domain.board.entity.ReviewBoard;
 import com.example.jbbackend.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -29,8 +33,9 @@ public class ReviewContentVersion extends BaseTimeEntity {
     @Column(name = "content_version_id")
     private Long id;
 
-    @Column(name = "board_id", nullable = false)
-    private Long boardId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id", nullable = false)
+    private ReviewBoard board;
 
     @Column(name = "version_no", nullable = false)
     private Integer versionNo;
@@ -86,7 +91,7 @@ public class ReviewContentVersion extends BaseTimeEntity {
     private String reviewReports;
 
     private ReviewContentVersion(
-        Long boardId,
+        ReviewBoard board,
         Integer versionNo,
         BusinessSector businessSector,
         ChannelType channelType,
@@ -101,7 +106,7 @@ public class ReviewContentVersion extends BaseTimeEntity {
         String reviewComments,
         String reviewReports
     ) {
-        this.boardId = boardId;
+        this.board = board;
         this.versionNo = versionNo;
         this.businessSector = businessSector;
         this.channelType = channelType;
@@ -118,7 +123,7 @@ public class ReviewContentVersion extends BaseTimeEntity {
     }
 
     public static ReviewContentVersion create(
-        Long boardId,
+        ReviewBoard board,
         Integer versionNo,
         BusinessSector businessSector,
         ChannelType channelType,
@@ -134,7 +139,7 @@ public class ReviewContentVersion extends BaseTimeEntity {
         String reviewReports
     ) {
         return new ReviewContentVersion(
-            boardId,
+            board,
             versionNo,
             businessSector,
             channelType,

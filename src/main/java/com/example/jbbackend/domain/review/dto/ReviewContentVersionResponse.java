@@ -26,7 +26,7 @@ public record ReviewContentVersionResponse(
     public static ReviewContentVersionResponse from(ReviewContentVersion review) {
         return new ReviewContentVersionResponse(
             review.getId(),
-            review.getBoardId(),
+            review.getBoard().getId(),
             review.getVersionNo(),
             review.getBusinessSector().name(),
             review.getChannelType().name(),

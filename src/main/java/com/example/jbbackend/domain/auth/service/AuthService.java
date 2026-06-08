@@ -2,6 +2,8 @@ package com.example.jbbackend.domain.auth.service;
 
 import com.example.jbbackend.domain.auth.dto.LoginRequest;
 import com.example.jbbackend.domain.auth.dto.RegisterRequest;
+import com.example.jbbackend.domain.team.entity.Team;
+import com.example.jbbackend.domain.team.repository.TeamRepository;
 import com.example.jbbackend.domain.user.dto.UserResponse;
 import com.example.jbbackend.domain.user.entity.User;
 import com.example.jbbackend.domain.user.entity.UserRole;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -30,7 +33,7 @@ public class AuthService {
             request.password(),
             request.name(),
             parseRole(request.role()),
-            request.teamId()
+            findTeam(request.teamId())
         );
         return UserResponse.from(userRepository.save(user));
     }
@@ -51,5 +54,10 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             throw new BusinessException(ErrorCode.INVALID_MEMBER_ROLE);
         }
+    }
+
+    private Team findTeam(Long teamId) {
+        return teamRepository.findByIdAndDeletedAtIsNull(teamId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
     }
 }

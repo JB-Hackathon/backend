@@ -15,6 +15,8 @@ import com.example.jbbackend.domain.review.entity.ProductCategory;
 import com.example.jbbackend.domain.review.entity.ReviewContentVersion;
 import com.example.jbbackend.domain.review.entity.ReviewStatus;
 import com.example.jbbackend.domain.review.repository.ReviewContentVersionRepository;
+import com.example.jbbackend.domain.user.entity.User;
+import com.example.jbbackend.domain.user.repository.UserRepository;
 import com.example.jbbackend.global.Exception.BusinessException;
 import com.example.jbbackend.global.Exception.ErrorCode;
 import java.io.IOException;
@@ -36,6 +38,7 @@ public class ReviewBoardService {
 
     private final ReviewBoardRepository reviewBoardRepository;
     private final ReviewContentVersionRepository reviewContentVersionRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public ReviewStartResponse createReviewBoard(ReviewBoardCreateRequest request, MultipartFile contentFile) {
@@ -47,9 +50,12 @@ public class ReviewBoardService {
         ContentType contentType = parseContentType(request.contentType());
         validateContent(contentType, request.contentText(), storedFilePath);
 
+        User contentCreator = findUser(request.contentCreatorId());
+        User complianceAdvisor = findUser(request.complianceAdvisorId());
+
         ReviewBoard board = ReviewBoard.create(
-            request.contentCreatorId(),
-            request.complianceAdvisorId(),
+            contentCreator,
+            complianceAdvisor,
             request.managementNumber(),
             request.reviewApprovalNumber(),
             request.title()
@@ -57,7 +63,7 @@ public class ReviewBoardService {
         ReviewBoard savedBoard = reviewBoardRepository.save(board);
 
         ReviewContentVersion initialVersion = ReviewContentVersion.create(
-            savedBoard.getId(),
+            savedBoard,
             1,
             parseBusinessSector(request.businessSector()),
             parseChannelType(request.channelType()),
@@ -91,7 +97,7 @@ public class ReviewBoardService {
         return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
             .map(board -> {
                 ReviewContentVersionResponse latestVersion = reviewContentVersionRepository
-                    .findFirstByBoardIdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
+                    .findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
                     .map(ReviewContentVersionResponse::from)
                     .orElse(null);
                 return new ReviewStartResponse(ReviewBoardResponse.from(board), latestVersion);
@@ -133,6 +139,11 @@ public class ReviewBoardService {
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다.");
         }
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
     }
 
     private String getExtension(String filename) {
