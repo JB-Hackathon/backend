@@ -84,7 +84,7 @@ public class ReviewBoardService {
         ReviewContentVersion savedVersion = reviewContentVersionRepository.save(initialVersion);
 
         return new ReviewStartResponse(
-            ReviewBoardResponse.from(savedBoard),
+            ReviewBoardResponse.from(savedBoard, savedVersion),
             ReviewContentVersionResponse.from(savedVersion)
         );
     }
@@ -117,11 +117,13 @@ public class ReviewBoardService {
     public Optional<ReviewStartResponse> startReview(Long reviewId) {
         return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
             .map(board -> {
-                ReviewContentVersionResponse latestVersion = reviewContentVersionRepository
+                ReviewContentVersion latestVersion = reviewContentVersionRepository
                     .findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
-                    .map(ReviewContentVersionResponse::from)
                     .orElse(null);
-                return new ReviewStartResponse(ReviewBoardResponse.from(board), latestVersion);
+                return new ReviewStartResponse(
+                    ReviewBoardResponse.from(board, latestVersion),
+                    latestVersion == null ? null : ReviewContentVersionResponse.from(latestVersion)
+                );
             });
     }
 
