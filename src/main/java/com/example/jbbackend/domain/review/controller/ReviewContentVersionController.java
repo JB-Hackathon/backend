@@ -1,5 +1,6 @@
 package com.example.jbbackend.domain.review.controller;
 
+import com.example.jbbackend.domain.review.dto.ReviewCommentResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
@@ -48,6 +49,13 @@ public class ReviewContentVersionController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReview(@PathVariable Long reviewId) {
         return reviewService.getReview(reviewId)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
+    }
+
+    @GetMapping("/{reviewId}/comments")
+    public ResponseEntity<ApiResponse<ReviewCommentResponse>> getReviewComments(@PathVariable Long reviewId) {
+        return reviewService.getReviewComments(reviewId)
             .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
             .orElseGet(this::reviewNotFound);
     }

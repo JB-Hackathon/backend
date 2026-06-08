@@ -2,6 +2,7 @@ package com.example.jbbackend.domain.review.service;
 
 import com.example.jbbackend.domain.board.entity.ReviewBoard;
 import com.example.jbbackend.domain.board.repository.ReviewBoardRepository;
+import com.example.jbbackend.domain.review.dto.ReviewCommentResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
@@ -146,6 +147,11 @@ public class ReviewContentVersionService {
                     .orElse(null);
                 return ReviewDetailResponse.from(board, latestVersion);
             });
+    }
+
+    public Optional<ReviewCommentResponse> getReviewComments(Long reviewId) {
+        return findLatestReviewVersion(reviewId)
+            .map(ReviewCommentResponse::from);
     }
 
     public List<ReviewContentVersionResponse> getReviews(String reviewName, String managementNumber) {
