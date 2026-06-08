@@ -24,8 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,26 +84,46 @@ public class ReviewBoardService {
         ReviewContentVersion savedVersion = reviewContentVersionRepository.save(initialVersion);
 
         return new ReviewStartResponse(
-            ReviewBoardResponse.from(savedBoard),
+            ReviewBoardResponse.from(savedBoard, savedVersion),
             ReviewContentVersionResponse.from(savedVersion)
         );
     }
 
     public List<ReviewBoardResponse> getReviewBoards() {
-        return reviewBoardRepository.findAllByDeletedAtIsNullOrderByIdAsc()
+        List<ReviewBoard> boards = reviewBoardRepository.findAllByDeletedAtIsNullOrderByIdAsc();
+        List<Long> boardIds = boards.stream()
+            .map(ReviewBoard::getId)
+            .toList();
+
+        if (boardIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, ReviewContentVersion> latestVersions = reviewContentVersionRepository
+            .findLatestCandidatesByBoardIds(boardIds)
             .stream()
-            .map(ReviewBoardResponse::from)
+            .collect(Collectors.toMap(
+                review -> review.getBoard().getId(),
+                Function.identity(),
+                (existing, ignored) -> existing
+            ));
+
+        return boards
+            .stream()
+            .map(board -> ReviewBoardResponse.from(board, latestVersions.get(board.getId())))
             .toList();
     }
 
     public Optional<ReviewStartResponse> startReview(Long reviewId) {
         return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
             .map(board -> {
-                ReviewContentVersionResponse latestVersion = reviewContentVersionRepository
+                ReviewContentVersion latestVersion = reviewContentVersionRepository
                     .findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
-                    .map(ReviewContentVersionResponse::from)
                     .orElse(null);
-                return new ReviewStartResponse(ReviewBoardResponse.from(board), latestVersion);
+                return new ReviewStartResponse(
+                    ReviewBoardResponse.from(board, latestVersion),
+                    latestVersion == null ? null : ReviewContentVersionResponse.from(latestVersion)
+                );
             });
     }
 
