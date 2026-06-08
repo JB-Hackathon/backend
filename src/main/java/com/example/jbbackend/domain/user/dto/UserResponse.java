@@ -19,7 +19,7 @@ public record UserResponse(
             user.getEmail(),
             user.getName(),
             user.getRole().name(),
-            user.getTeamId(),
+            user.getTeam().getId(),
             user.getCreatedAt(),
             user.getUpdatedAt()
         );

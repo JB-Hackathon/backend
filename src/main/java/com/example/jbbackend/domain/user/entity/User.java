@@ -1,13 +1,17 @@
 package com.example.jbbackend.domain.user.entity;
 
 import com.example.jbbackend.global.common.entity.BaseTimeEntity;
+import com.example.jbbackend.domain.team.entity.Team;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -39,22 +43,23 @@ public class User extends BaseTimeEntity {
     @ColumnTransformer(write = "?::user_role")
     private UserRole role;
 
-    @Column(name = "team_id", nullable = false)
-    private Long teamId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
 
-    private User(String email, String password, String name, UserRole role, Long teamId) {
+    private User(String email, String password, String name, UserRole role, Team team) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.role = role;
-        this.teamId = teamId;
+        this.team = team;
     }
 
-    public static User create(String email, String password, String name, UserRole role, Long teamId) {
-        return new User(email, password, name, role, teamId);
+    public static User create(String email, String password, String name, UserRole role, Team team) {
+        return new User(email, password, name, role, team);
     }
 
-    public void update(String email, String password, String name, UserRole role, Long teamId) {
+    public void update(String email, String password, String name, UserRole role, Team team) {
         if (email != null) {
             this.email = email;
         }
@@ -67,8 +72,8 @@ public class User extends BaseTimeEntity {
         if (role != null) {
             this.role = role;
         }
-        if (teamId != null) {
-            this.teamId = teamId;
+        if (team != null) {
+            this.team = team;
         }
     }
 

@@ -96,7 +96,7 @@ public class ReviewContentVersionService {
         return reviewBoardRepository.findByIdAndDeletedAtIsNull(boardId)
             .map(board -> {
                 board.delete();
-                reviewRepository.findAllByBoardIdAndDeletedAtIsNullOrderByVersionNoAsc(boardId)
+                reviewRepository.findAllByBoard_IdAndDeletedAtIsNullOrderByVersionNoAsc(boardId)
                     .forEach(ReviewContentVersion::delete);
                 return true;
             })
@@ -124,7 +124,7 @@ public class ReviewContentVersionService {
     }
 
     public List<ReviewContentVersionResponse> getReviewVersions(Long boardId) {
-        return reviewRepository.findAllByBoardIdAndDeletedAtIsNullOrderByVersionNoAsc(boardId)
+        return reviewRepository.findAllByBoard_IdAndDeletedAtIsNullOrderByVersionNoAsc(boardId)
             .stream()
             .map(ReviewContentVersionResponse::from)
             .toList();
@@ -138,7 +138,7 @@ public class ReviewContentVersionService {
         if (reviewBoardRepository.findByIdAndDeletedAtIsNull(boardId).isEmpty()) {
             return Optional.empty();
         }
-        return reviewRepository.findFirstByBoardIdAndDeletedAtIsNullOrderByVersionNoDesc(boardId);
+        return reviewRepository.findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(boardId);
     }
 
     private List<ReviewContentVersionResponse> getLatestVersions(List<ReviewBoard> boards) {
@@ -151,8 +151,8 @@ public class ReviewContentVersionService {
         }
 
         Map<Long, ReviewContentVersion> latestVersions = new LinkedHashMap<>();
-        reviewRepository.findAllByBoardIdInAndDeletedAtIsNullOrderByBoardIdAscVersionNoDesc(boardIds)
-            .forEach(review -> latestVersions.putIfAbsent(review.getBoardId(), review));
+        reviewRepository.findLatestCandidatesByBoardIds(boardIds)
+            .forEach(review -> latestVersions.putIfAbsent(review.getBoard().getId(), review));
 
         return latestVersions.values()
             .stream()

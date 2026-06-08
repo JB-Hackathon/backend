@@ -1,11 +1,15 @@
 package com.example.jbbackend.domain.board.entity;
 
+import com.example.jbbackend.domain.user.entity.User;
 import com.example.jbbackend.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,11 +26,13 @@ public class ReviewBoard extends BaseTimeEntity {
     @Column(name = "board_id")
     private Long id;
 
-    @Column(name = "content_creator_id", nullable = false)
-    private Long contentCreatorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "content_creator_id", nullable = false)
+    private User contentCreator;
 
-    @Column(name = "compliance_advisor_id", nullable = false)
-    private Long complianceAdvisorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "compliance_advisor_id", nullable = false)
+    private User complianceAdvisor;
 
     @Column(name = "management_number", nullable = false, unique = true, length = 50)
     private String managementNumber;
@@ -38,29 +44,29 @@ public class ReviewBoard extends BaseTimeEntity {
     private String title;
 
     private ReviewBoard(
-        Long contentCreatorId,
-        Long complianceAdvisorId,
+        User contentCreator,
+        User complianceAdvisor,
         String managementNumber,
         String reviewApprovalNumber,
         String title
     ) {
-        this.contentCreatorId = contentCreatorId;
-        this.complianceAdvisorId = complianceAdvisorId;
+        this.contentCreator = contentCreator;
+        this.complianceAdvisor = complianceAdvisor;
         this.managementNumber = managementNumber;
         this.reviewApprovalNumber = reviewApprovalNumber;
         this.title = title;
     }
 
     public static ReviewBoard create(
-        Long contentCreatorId,
-        Long complianceAdvisorId,
+        User contentCreator,
+        User complianceAdvisor,
         String managementNumber,
         String reviewApprovalNumber,
         String title
     ) {
         return new ReviewBoard(
-            contentCreatorId,
-            complianceAdvisorId,
+            contentCreator,
+            complianceAdvisor,
             managementNumber,
             reviewApprovalNumber,
             title
