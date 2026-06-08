@@ -4,6 +4,7 @@ import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
+import com.example.jbbackend.domain.review.dto.ReviewStatusUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
 import com.example.jbbackend.domain.review.service.ReviewContentVersionService;
 import com.example.jbbackend.global.Exception.ErrorCode;
@@ -97,6 +98,16 @@ public class ReviewContentVersionController {
         @Valid @RequestBody ReviewContentVersionUpdateRequest request
     ) {
         return patchReview(reviewId, request);
+    }
+
+    @PatchMapping("/{reviewId}/status")
+    public ResponseEntity<ApiResponse<ReviewContentVersionResponse>> updateReviewStatus(
+        @PathVariable Long reviewId,
+        @Valid @RequestBody ReviewStatusUpdateRequest request
+    ) {
+        return reviewService.updateReviewStatus(reviewId, request)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
     }
 
     @PatchMapping("/{reviewId}")

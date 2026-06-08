@@ -6,6 +6,7 @@ import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
+import com.example.jbbackend.domain.review.dto.ReviewStatusUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
 import com.example.jbbackend.domain.review.entity.BusinessSector;
 import com.example.jbbackend.domain.review.entity.ChannelType;
@@ -90,6 +91,39 @@ public class ReviewContentVersionService {
                 );
                 return ReviewContentVersionResponse.from(review);
             });
+    }
+
+    @Transactional
+    public Optional<ReviewContentVersionResponse> updateReviewStatus(
+        Long boardId,
+        ReviewStatusUpdateRequest request
+    ) {
+        ReviewStatus reviewStatus = parseDecisionStatus(request.reviewStatus());
+
+        return reviewBoardRepository.findByIdAndDeletedAtIsNull(boardId)
+            .flatMap(board -> reviewRepository.findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(boardId)
+                .map(review -> {
+                    board.updateReviewApprovalNumber(
+                        reviewStatus == ReviewStatus.approved
+                            ? normalizeBlankToNull(request.reviewApprovalNumber())
+                            : null
+                    );
+                    review.update(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        reviewStatus,
+                        null,
+                        null
+                    );
+                    return ReviewContentVersionResponse.from(review);
+                }));
     }
 
     @Transactional
@@ -218,6 +252,21 @@ public class ReviewContentVersionService {
 
     private ReviewStatus parseNullableReviewStatus(String value) {
         return value == null ? null : parseEnum(ReviewStatus.class, value);
+    }
+
+    private ReviewStatus parseDecisionStatus(String value) {
+        ReviewStatus reviewStatus = parseEnum(ReviewStatus.class, value);
+        if (reviewStatus != ReviewStatus.approved && reviewStatus != ReviewStatus.rejected) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "승인 또는 반려 상태만 설정할 수 있습니다.");
+        }
+        return reviewStatus;
+    }
+
+    private String normalizeBlankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 
     private <T extends Enum<T>> T parseEnum(Class<T> enumType, String value) {
