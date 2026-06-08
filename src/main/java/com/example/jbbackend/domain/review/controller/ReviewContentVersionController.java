@@ -4,6 +4,7 @@ import com.example.jbbackend.domain.review.dto.ReviewCommentResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
+import com.example.jbbackend.domain.review.dto.ReviewFeedbackResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
 import com.example.jbbackend.domain.review.dto.ReviewStatusUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
@@ -56,6 +57,13 @@ public class ReviewContentVersionController {
     @GetMapping("/{reviewId}/comments")
     public ResponseEntity<ApiResponse<ReviewCommentResponse>> getReviewComments(@PathVariable Long reviewId) {
         return reviewService.getReviewComments(reviewId)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
+    }
+
+    @GetMapping("/{reviewId}/feedback")
+    public ResponseEntity<ApiResponse<ReviewFeedbackResponse>> getLatestReviewFeedback(@PathVariable Long reviewId) {
+        return reviewService.getLatestReviewFeedback(reviewId)
             .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
             .orElseGet(this::reviewNotFound);
     }

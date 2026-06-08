@@ -6,6 +6,7 @@ import com.example.jbbackend.domain.review.dto.ReviewCommentResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
+import com.example.jbbackend.domain.review.dto.ReviewFeedbackResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
 import com.example.jbbackend.domain.review.dto.ReviewStatusUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
@@ -152,6 +153,11 @@ public class ReviewContentVersionService {
     public Optional<ReviewCommentResponse> getReviewComments(Long reviewId) {
         return findLatestReviewVersion(reviewId)
             .map(ReviewCommentResponse::from);
+    }
+
+    public Optional<ReviewFeedbackResponse> getLatestReviewFeedback(Long reviewId) {
+        return findLatestReviewVersion(reviewId)
+            .map(ReviewFeedbackResponse::from);
     }
 
     public List<ReviewContentVersionResponse> getReviews(String reviewName, String managementNumber) {
