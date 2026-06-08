@@ -33,7 +33,7 @@ public class ReviewBoardController {
     public ResponseEntity<ApiResponse<ReviewStartResponse>> createReviewBoard(
         @Valid @RequestBody ReviewBoardCreateRequest request
     ) {
-        ReviewStartResponse response = reviewBoardService.createReviewBoard(request, null);
+        ReviewStartResponse response = reviewBoardService.createReviewBoard(request, List.of());
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(response, HttpStatus.CREATED));
@@ -42,9 +42,13 @@ public class ReviewBoardController {
     @PostMapping(value = {"", "/"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ReviewStartResponse>> createReviewBoardWithImage(
         @Valid @ModelAttribute ReviewBoardCreateRequest request,
+        @RequestPart(required = false) List<MultipartFile> contentFiles,
         @RequestPart(required = false) MultipartFile contentFile
     ) {
-        ReviewStartResponse response = reviewBoardService.createReviewBoard(request, contentFile);
+        ReviewStartResponse response = reviewBoardService.createReviewBoard(
+            request,
+            mergeContentFiles(contentFiles, contentFile)
+        );
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(response, HttpStatus.CREATED));
@@ -68,5 +72,18 @@ public class ReviewBoardController {
         return ResponseEntity
             .status(ErrorCode.REVIEW_NOT_FOUND.getStatus())
             .body(ApiResponse.error(ErrorCode.REVIEW_NOT_FOUND));
+    }
+
+    private List<MultipartFile> mergeContentFiles(List<MultipartFile> contentFiles, MultipartFile contentFile) {
+        if (contentFile == null || contentFile.isEmpty()) {
+            return contentFiles == null ? List.of() : contentFiles;
+        }
+        if (contentFiles == null || contentFiles.isEmpty()) {
+            return List.of(contentFile);
+        }
+
+        java.util.ArrayList<MultipartFile> mergedFiles = new java.util.ArrayList<>(contentFiles);
+        mergedFiles.add(contentFile);
+        return mergedFiles;
     }
 }

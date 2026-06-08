@@ -4,6 +4,7 @@ import com.example.jbbackend.domain.board.entity.ReviewBoard;
 import com.example.jbbackend.domain.board.repository.ReviewBoardRepository;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
+import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
 import com.example.jbbackend.domain.review.entity.BusinessSector;
@@ -103,9 +104,14 @@ public class ReviewContentVersionService {
             .orElse(false);
     }
 
-    public Optional<ReviewContentVersionResponse> getReview(Long reviewId) {
-        return reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-            .map(ReviewContentVersionResponse::from);
+    public Optional<ReviewDetailResponse> getReview(Long reviewId) {
+        return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
+            .map(board -> {
+                ReviewContentVersion latestVersion = reviewRepository
+                    .findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
+                    .orElse(null);
+                return ReviewDetailResponse.from(board, latestVersion);
+            });
     }
 
     public List<ReviewContentVersionResponse> getReviews(String reviewName, String managementNumber) {

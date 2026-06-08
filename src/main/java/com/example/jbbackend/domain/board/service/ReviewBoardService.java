@@ -44,12 +44,12 @@ public class ReviewBoardService {
     private final UserRepository userRepository;
 
     @Transactional
-    public ReviewStartResponse createReviewBoard(ReviewBoardCreateRequest request, MultipartFile contentFile) {
+    public ReviewStartResponse createReviewBoard(ReviewBoardCreateRequest request, List<MultipartFile> contentFiles) {
         if (reviewBoardRepository.existsByManagementNumberAndDeletedAtIsNull(request.managementNumber())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 사용 중인 관리번호입니다.");
         }
 
-        String storedFilePath = saveContentFile(contentFile).orElse(request.contentFilePath());
+        String storedFilePath = saveContentFiles(contentFiles).orElse(request.contentFilePath());
         ContentType contentType = parseContentType(request.contentType());
         validateContent(contentType, request.contentText(), storedFilePath);
 
@@ -145,8 +145,8 @@ public class ReviewBoardService {
         }
     }
 
-    private Optional<String> saveContentFile(MultipartFile contentFile) {
-        if (contentFile == null || contentFile.isEmpty()) {
+    private Optional<String> saveContentFiles(List<MultipartFile> contentFiles) {
+        if (contentFiles == null || contentFiles.isEmpty()) {
             return Optional.empty();
         }
 
@@ -154,11 +154,28 @@ public class ReviewBoardService {
             Path uploadDirectory = Path.of("uploads", "reviews");
             Files.createDirectories(uploadDirectory);
 
+            List<String> storedFilePaths = contentFiles.stream()
+                .filter(contentFile -> contentFile != null && !contentFile.isEmpty())
+                .map(contentFile -> saveContentFile(uploadDirectory, contentFile))
+                .toList();
+
+            if (storedFilePaths.isEmpty()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(String.join(",", storedFilePaths));
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다.");
+        }
+    }
+
+    private String saveContentFile(Path uploadDirectory, MultipartFile contentFile) {
+        try {
             String storedFilename = UUID.randomUUID() + getExtension(contentFile.getOriginalFilename());
             Path targetPath = uploadDirectory.resolve(storedFilename);
             Files.copy(contentFile.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            return Optional.of(targetPath.toString().replace("\\", "/"));
+            return targetPath.toString().replace("\\", "/");
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다.");
         }
