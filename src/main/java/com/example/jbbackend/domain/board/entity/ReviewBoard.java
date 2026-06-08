@@ -76,4 +76,8 @@ public class ReviewBoard extends BaseTimeEntity {
     public void delete() {
         softDelete();
     }
+
+    public void updateReviewApprovalNumber(String reviewApprovalNumber) {
+        this.reviewApprovalNumber = reviewApprovalNumber;
+    }
 }

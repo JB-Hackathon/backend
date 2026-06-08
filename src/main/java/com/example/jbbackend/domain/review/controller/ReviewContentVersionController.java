@@ -1,9 +1,12 @@
 package com.example.jbbackend.domain.review.controller;
 
+import com.example.jbbackend.domain.review.dto.ReviewCommentResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionResponse;
 import com.example.jbbackend.domain.review.dto.ReviewContentVersionUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewDetailResponse;
+import com.example.jbbackend.domain.review.dto.ReviewFeedbackResponse;
 import com.example.jbbackend.domain.review.dto.ReviewReportRequest;
+import com.example.jbbackend.domain.review.dto.ReviewStatusUpdateRequest;
 import com.example.jbbackend.domain.review.dto.ReviewSubmitRequest;
 import com.example.jbbackend.domain.review.service.ReviewContentVersionService;
 import com.example.jbbackend.global.Exception.ErrorCode;
@@ -47,6 +50,20 @@ public class ReviewContentVersionController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReview(@PathVariable Long reviewId) {
         return reviewService.getReview(reviewId)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
+    }
+
+    @GetMapping("/{reviewId}/comments")
+    public ResponseEntity<ApiResponse<ReviewCommentResponse>> getReviewComments(@PathVariable Long reviewId) {
+        return reviewService.getReviewComments(reviewId)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
+    }
+
+    @GetMapping("/{reviewId}/feedback")
+    public ResponseEntity<ApiResponse<ReviewFeedbackResponse>> getLatestReviewFeedback(@PathVariable Long reviewId) {
+        return reviewService.getLatestReviewFeedback(reviewId)
             .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
             .orElseGet(this::reviewNotFound);
     }
@@ -97,6 +114,16 @@ public class ReviewContentVersionController {
         @Valid @RequestBody ReviewContentVersionUpdateRequest request
     ) {
         return patchReview(reviewId, request);
+    }
+
+    @PatchMapping("/{reviewId}/status")
+    public ResponseEntity<ApiResponse<ReviewContentVersionResponse>> updateReviewStatus(
+        @PathVariable Long reviewId,
+        @Valid @RequestBody ReviewStatusUpdateRequest request
+    ) {
+        return reviewService.updateReviewStatus(reviewId, request)
+            .map(response -> ResponseEntity.ok(ApiResponse.success(response)))
+            .orElseGet(this::reviewNotFound);
     }
 
     @PatchMapping("/{reviewId}")
