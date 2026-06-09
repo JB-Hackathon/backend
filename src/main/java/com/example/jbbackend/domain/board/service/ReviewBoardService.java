@@ -1,5 +1,7 @@
 package com.example.jbbackend.domain.board.service;
 
+import com.example.jbbackend.domain.board.dto.AiReviewResponse;
+import com.example.jbbackend.domain.board.dto.ReviewAiStartResponse;
 import com.example.jbbackend.domain.board.dto.ReviewBoardCreateRequest;
 import com.example.jbbackend.domain.board.dto.ReviewBoardResponse;
 import com.example.jbbackend.domain.board.dto.ReviewStartResponse;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -42,6 +46,7 @@ public class ReviewBoardService {
     private final ReviewBoardRepository reviewBoardRepository;
     private final ReviewContentVersionRepository reviewContentVersionRepository;
     private final UserRepository userRepository;
+    private final RestClient aiRestClient;
 
     @Transactional
     public ReviewStartResponse createReviewBoard(ReviewBoardCreateRequest request, List<MultipartFile> contentFiles) {
@@ -114,17 +119,43 @@ public class ReviewBoardService {
             .toList();
     }
 
-    public Optional<ReviewStartResponse> startReview(Long reviewId) {
+    @Transactional
+    public Optional<ReviewAiStartResponse> startReview(Long reviewId) {
         return reviewBoardRepository.findByIdAndDeletedAtIsNull(reviewId)
             .map(board -> {
                 ReviewContentVersion latestVersion = reviewContentVersionRepository
                     .findFirstByBoard_IdAndDeletedAtIsNullOrderByVersionNoDesc(reviewId)
-                    .orElse(null);
-                return new ReviewStartResponse(
+                    .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+
+                AiReviewResponse aiReview = callStartReview(latestVersion.getId());
+                latestVersion.updateAiReviewResult(
+                    parseReviewStatus(aiReview.reviewStatus()),
+                    aiReview.toReviewComments()
+                );
+
+                return new ReviewAiStartResponse(
                     ReviewBoardResponse.from(board, latestVersion),
-                    latestVersion == null ? null : ReviewContentVersionResponse.from(latestVersion)
+                    ReviewContentVersionResponse.from(latestVersion),
+                    aiReview
                 );
             });
+    }
+
+    private AiReviewResponse callStartReview(Long contentVersionId) {
+        try {
+            AiReviewResponse response = aiRestClient
+                .post()
+                .uri("/review/{contentVersionId}", contentVersionId)
+                .retrieve()
+                .body(AiReviewResponse.class);
+
+            if (response == null) {
+                throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "AI 심의 결과가 비어 있습니다.");
+            }
+            return response;
+        } catch (RestClientException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "AI 심의 서버 호출에 실패했습니다.");
+        }
     }
 
     private void validateContent(ContentType contentType, String contentText, String contentFilePath) {
@@ -226,6 +257,10 @@ public class ReviewBoardService {
 
     private LanguageCode parseLanguageCode(String value) {
         return parseEnum(LanguageCode.class, value);
+    }
+
+    private ReviewStatus parseReviewStatus(String value) {
+        return parseEnum(ReviewStatus.class, value);
     }
 
     private <T extends Enum<T>> T parseEnum(Class<T> enumType, String value) {

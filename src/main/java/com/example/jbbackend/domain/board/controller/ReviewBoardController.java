@@ -1,5 +1,6 @@
 package com.example.jbbackend.domain.board.controller;
 
+import com.example.jbbackend.domain.board.dto.ReviewAiStartResponse;
 import com.example.jbbackend.domain.board.dto.ReviewBoardCreateRequest;
 import com.example.jbbackend.domain.board.dto.ReviewBoardResponse;
 import com.example.jbbackend.domain.board.dto.ReviewStartResponse;
@@ -60,7 +61,7 @@ public class ReviewBoardController {
     }
 
     @PostMapping("/review/{reviewId}")
-    public ResponseEntity<ApiResponse<ReviewStartResponse>> startReview(@PathVariable Long reviewId) {
+    public ResponseEntity<ApiResponse<ReviewAiStartResponse>> startReview(@PathVariable Long reviewId) {
         return reviewBoardService.startReview(reviewId)
             .map(response -> ResponseEntity
                 .status(HttpStatus.CREATED)
