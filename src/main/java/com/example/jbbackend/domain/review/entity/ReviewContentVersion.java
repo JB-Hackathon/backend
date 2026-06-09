@@ -216,6 +216,15 @@ public class ReviewContentVersion extends BaseTimeEntity {
         this.reviewReports = reviewReports;
     }
 
+    public void updateAiReviewResult(ReviewStatus reviewStatus, String reviewComments) {
+        if (reviewStatus != null) {
+            this.reviewStatus = reviewStatus;
+        }
+        if (reviewComments != null) {
+            this.reviewComments = reviewComments;
+        }
+    }
+
     public void delete() {
         softDelete();
     }
